@@ -6,6 +6,7 @@ if [ ! -f "$conf_file" ]; then
    echo "app=com.alamo.books";
    echo "package=com.alamo.books";
    echo "activity=MainActivity";
+   echo "gradle=gradle  #other option:   ./gradlew ";
    echo; echo;
    exit 1;
 fi;
@@ -15,7 +16,8 @@ log_file="log.txt";
 #get values from androidbashhelper.conf file
 app=`cat $conf_file | grep "app=" | awk -F= '{print $2}'`;
 pkg=`cat $conf_file | grep "package=" | awk -F= '{print $2}'`;
-activity=`cat $conf_file | grep "package=" | awk -F= '{print $2}'`
+activity=`cat $conf_file | grep "activity=" | awk -F= '{print $2}'`
+gradle=`cat $conf_file | grep "gradle=" | awk -F= '{print $2}'`
 
 normal="echo -n -e \e[0m";
 blink="echo -n -e \e[5m";
@@ -37,12 +39,19 @@ function wr {
 }
 
 case $1 in
-"com")
+"comkotlin" | "comandroid")
+   if [ "$1" = "comkotlin" ]; then
+      instruction="compileKotlin";
+   else
+      instruction="assembleDebug";
+   fi;
+
     first=1;
 
     while [ "$2" = "-r" ] || [ $first -eq 1 ]; do
-        #./gradlew assembleDebug --stacktrace --debug 2>>$log_file 1>>$log_file;
-        ./gradlew assembleDebug  --rerun-tasks --warning-mode all --full-stacktrace 2>/tmp/comp_error.txt 1>/tmp/comp_success.txt ;
+        #$gradle assembleDebug --stacktrace --debug 2>>$log_file 1>>$log_file;
+#        $gradle assembleDebug  --rerun-tasks --warning-mode all --full-stacktrace 2>/tmp/comp_error.txt 1>/tmp/comp_success.txt ;
+        $gradle $instruction  --rerun-tasks --warning-mode all --full-stacktrace 2>/tmp/comp_error.txt 1>/tmp/comp_success.txt ;
         r=$?;
         if [ $r -eq 0 ]; then
           cat /tmp/comp_success.txt | grep "w: ";
@@ -61,7 +70,7 @@ case $1 in
     exit;
 ;;
 "test")
-  ./gradlew :app:testDebugUnitTest  --rerun-tasks --debug --full-stacktrace  2>/tmp/test_error.txt 1>/tmp/test_success.txt ;
+  $gradle test  --rerun-tasks --debug --full-stacktrace  2>/tmp/test_error.txt 1>/tmp/test_success.txt ;
   r=$?;
   passed=$(cat /tmp/test_success.txt | grep -i -e "${app}.*PASSED" | wc -l);
   failed=$(cat /tmp/test_success.txt | grep -i -e "${app}.*FAILED" | wc -l);
@@ -84,9 +93,26 @@ case $1 in
     exit 1;
   fi;
 ;;
+"doc")
+  $gradle dokka --rerun-tasks 2>/tmp/doc_error.txt 1>/tmp/doc_success.txt ;
+  r=$?;
+  if  [ $r -eq 0 ]; then
+    methodsWithoutDoc=$(cat /tmp/doc_success.txt | grep -i -e "No documentation" | wc -l )
+    if [ $methodsWithoutDoc -gt 0 ]; then
+      cat /tmp/doc_success.txt | grep -i -e "No documentation";
+      wr y "att: $methodsWithoutDoc methods/class without doc"
+    fi
+    echo "view doc at: file://`pwd`/build/javadoc/"
+    wr g "exito doc";
+    exit 0;
+  else
+    wr r "fail doc"
+    exit 1;
+  fi;
+;;
 "coverage")
    #  info (COUNTERS) de coverage with jacoco: https://www.eclemma.org/jacoco/trunk/doc/counters.html
-   ./gradlew testDebugUnitTest JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
+   $gradle testDebugUnitTest JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
 
    #proccess
    f="/tmp/jacoco.csv";
@@ -188,8 +214,8 @@ case $1 in
    exit;
 ;;
 "run")
-    ./gradlew assembleDebug &&
-    ./gradlew installDebug &&
+    $gradle assembleDebug &&
+    $gradle installDebug &&
     adb shell cmd package uninstall -k "${app}" &&
     #el anterior siempre da $?=0
     adb -d install "`pwd`/app/build/outputs/apk/debug/app-debug.apk" &&
@@ -224,9 +250,7 @@ case $1 in
     exit;
 ;;
 *)
-   echo "unrecognized option";
+   wr r "unrecognized option";
    exit 1;
 ;;
 esac;
-
-
