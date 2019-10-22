@@ -102,6 +102,8 @@ case $1 in
     if [ $methodsWithoutDoc -gt 0 ]; then
       cat /tmp/doc_success.txt | grep -i -e "No documentation";
       wr y "att: $methodsWithoutDoc methods/class without doc"
+    else
+      echo "all methods are documented";
     fi
     echo "view doc at: file://`pwd`/build/javadoc/"
     wr g "exito dokka";
