@@ -1,3 +1,4 @@
+#!/bin/bash
 conf_file="androidbashhelper.conf";
 
 if [ ! -f "$conf_file" ]; then
@@ -93,7 +94,7 @@ case $1 in
     exit 1;
   fi;
 ;;
-"doc")
+"dokka")
   $gradle dokka --rerun-tasks 2>/tmp/doc_error.txt 1>/tmp/doc_success.txt ;
   r=$?;
   if  [ $r -eq 0 ]; then
@@ -103,17 +104,40 @@ case $1 in
       wr y "att: $methodsWithoutDoc methods/class without doc"
     fi
     echo "view doc at: file://`pwd`/build/javadoc/"
-    wr g "exito doc";
+    wr g "exito dokka";
     exit 0;
   else
-    wr r "fail doc"
+    wr r "fail dokka"
+    exit 1;
+  fi;
+;;
+"dokkaJar")
+  $gradle dokkaJar --rerun-tasks 2>/tmp/doc_error.txt 1>/tmp/doc_success.txt ;
+  r=$?;
+  if  [ $r -eq 0 ]; then
+    wr g "exito dokkaJar";
+    exit 0;
+  else
+    wr r "fail dokkaJar"
     exit 1;
   fi;
 ;;
 "coverage")
    #  info (COUNTERS) de coverage with jacoco: https://www.eclemma.org/jacoco/trunk/doc/counters.html
-   $gradle testDebugUnitTest JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
-
+   #$gradle testDebugUnitTest JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
+   $gradle --rerun-tasks JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
+   r=$?;
+   if [ $r -eq 0 ]; then
+     echo "files in: build/reports/jacoco/test/"
+     ls -la build/reports/jacoco/test/;
+     echo "generated at: file://`pwd`/build/reports/jacoco/test/html/index.html"
+     wr g "coverage generated"
+   else
+     wr g "error in Cov report"
+   fi;
+   exit;
+   #the following is for when is enabled to generate the report in CSV format,
+   #by the moment it is only in html format
    #proccess
    f="/tmp/jacoco.csv";
    f2="/tmp/jacoco02.csv";
