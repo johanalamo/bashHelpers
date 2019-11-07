@@ -74,10 +74,25 @@ case $1 in
   $gradle test  --rerun-tasks --debug --full-stacktrace  2>/tmp/test_error.txt 1>/tmp/test_success.txt ;
   r=$?;
   passed=$(cat /tmp/test_success.txt | grep -i -e "${pkg}.*>.*PASSED" | wc -l);
-  failed=$(cat /tmp/test_success.txt | grep -i -e "${pkg}.*FAILED" | wc -l);
+  failed=$(cat /tmp/test_success.txt | grep -i -e "${pkg}.*>.*FAILED" | wc -l);
   #there is an error. when it's success, each passed test is saved twice in the file
   if [ $r -eq 0 ]; then
     #cat /tmp/test_success.txt ;
+          #recalculate passed value; because each result appears twice in the file
+          cat /tmp/test_success.txt | grep -i -e "${pkg}.*>.*PASSED" | cut -c 40- | sort > /tmp/tmp001.txt;
+          rm /tmp/tmp002.txt 2>/dev/null;
+          fin=`cat /tmp/tmp001.txt | wc -l`
+          for (( c=1; c<=fin; c++ ))
+          do
+            (( c_uno = c - 1 ))
+            actual=$(cat /tmp/tmp001.txt | head -$c | tail -1)
+            existe=$(cat /tmp/tmp001.txt | head -$c_uno | grep "$actual" | wc -l)
+            if [ $existe -eq 0 ]; then
+              echo $actual >> /tmp/tmp002.txt
+            fi;
+          done
+    passed=$(cat /tmp/tmp002.txt | wc -l );
+
     cat /tmp/test_success.txt | grep  -i -e "FLAGFLAG" -e " e: " -e "WARN" -e " w: " ;
 #    cat /tmp/test_error.txt | grep -e "FLAG" -e " e: " -e " w: ";
     cant=$(cat /tmp/test_success.txt | grep PASSED | wc -l);
