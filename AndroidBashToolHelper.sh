@@ -73,8 +73,9 @@ case $1 in
 "test")
   $gradle test  --rerun-tasks --debug --full-stacktrace  2>/tmp/test_error.txt 1>/tmp/test_success.txt ;
   r=$?;
-  passed=$(cat /tmp/test_success.txt | grep -i -e "${app}.*PASSED" | wc -l);
-  failed=$(cat /tmp/test_success.txt | grep -i -e "${app}.*FAILED" | wc -l);
+  passed=$(cat /tmp/test_success.txt | grep -i -e "${pkg}.*>.*PASSED" | wc -l);
+  failed=$(cat /tmp/test_success.txt | grep -i -e "${pkg}.*FAILED" | wc -l);
+  #there is an error. when it's success, each passed test is saved twice in the file
   if [ $r -eq 0 ]; then
     #cat /tmp/test_success.txt ;
     cat /tmp/test_success.txt | grep  -i -e "FLAGFLAG" -e " e: " -e "WARN" -e " w: " ;
@@ -84,7 +85,7 @@ case $1 in
      echo;
      exit 0;
   else
-    cat /tmp/test_success.txt | grep -A 3 -i -e "TestEventLogger.*${app}.*>.*FAILED";
+    cat /tmp/test_success.txt | grep -A 3 -i -e "TestEventLogger.*${pkg}.*>.*FAILED";
     cat /tmp/test_error.txt | grep -i -e "completed.*failed";
     cat /tmp/test_error.txt | grep -i -e "Caused.*There were failing tests" | cut -c 167-;
     cat /tmp/test_success.txt | grep -i -e "FLAGFLAG" -e " e: " -e " w: ";
