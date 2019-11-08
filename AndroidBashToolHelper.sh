@@ -141,6 +141,7 @@ case $1 in
   fi;
 ;;
 "coverage")
+  rm  app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.csv 2>/dev/null;
    #  info (COUNTERS) de coverage with jacoco: https://www.eclemma.org/jacoco/trunk/doc/counters.html
    #$gradle testDebugUnitTest JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
    $gradle --rerun-tasks JacocoTestReport 2>/tmp/coverage_error.txt 1>/tmp/coverage_success.txt;
@@ -154,6 +155,13 @@ case $1 in
      wr r "error in Cov report"
      exit 1;
    fi;
+
+   #if jacoco test report was not generated in csv format, then exit
+   if [ ! -f "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.csv" ]; then
+     wr y "Coverage was not generated in csv format";
+     exit 0;
+   fi;
+
 #   exit;
    #the following is for when is enabled to generate the report in CSV format,
    #by the moment it is only in html format
