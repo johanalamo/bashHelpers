@@ -151,9 +151,10 @@ case $1 in
      echo "generated at: file://`pwd`/build/reports/jacoco/test/html/index.html"
      wr g "coverage generated"
    else
-     wr g "error in Cov report"
+     wr r "error in Cov report"
+     exit 1;
    fi;
-   exit;
+#   exit;
    #the following is for when is enabled to generate the report in CSV format,
    #by the moment it is only in html format
    #proccess
@@ -239,7 +240,7 @@ case $1 in
       color="r";
    fi;
    wr $color "cov.gen! 500pt: ${cant_500}. less than 500: ${cant_less_500}";
-   exit;
+   exit 0;
 ;;
 "subir")
    git add .
