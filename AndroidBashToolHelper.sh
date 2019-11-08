@@ -1,4 +1,15 @@
 #!/bin/bash
+#get link to generic functions"
+if [ -h "$0" ]; then
+  realPath="`readlink $0`";
+  pathFileFunctions="`dirname $realPath`";
+  fullRealPath="${pathFileFunctions}/genericFunctions.sh";
+  source $fullRealPath;
+else
+  source ./genericFunctions.sh
+fi;
+
+#exit;
 conf_file="androidbashhelper.conf";
 
 if [ ! -f "$conf_file" ]; then
@@ -20,24 +31,7 @@ pkg=`cat $conf_file | grep "package=" | awk -F= '{print $2}'`;
 activity=`cat $conf_file | grep "activity=" | awk -F= '{print $2}'`
 gradle=`cat $conf_file | grep "gradle=" | awk -F= '{print $2}'`
 
-normal="echo -n -e \e[0m";
-blink="echo -n -e \e[5m";
-green="echo -n -e \e[42m\e[31m";
-red="echo -n -e \e[41m\e[33m";
-yellow="echo -n -e \e[43m\e[34m";
 
-function wr {
-  d=$(date);
-  echo -n "$d: ";
-  case $1 in
-    "g")    $green; echo -n $2; $normal;    ;;
-    "r")    $red; echo -n $2; $normal;    ;;
-    "y")    $yellow; echo -n $2; $normal;    ;;
-    *) echo "otro"
-  esac;
-  echo;
-  #statements
-}
 
 case $1 in
 "comkotlin" | "comandroid")
