@@ -295,7 +295,7 @@ case $1 in
     exit;
 ;;
 *)
-   wr r "unrecognized option";
+   wr r "unrecognized option: $1";
    exit 1;
 ;;
 esac;
