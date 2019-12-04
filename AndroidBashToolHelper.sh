@@ -285,6 +285,7 @@ case $1 in
 ;;
 
 "log")
+    #help for logcat:   https://developer.android.com/studio/command-line/logcat.html
     p=`adb shell ps -A | grep ${app} | awk '{ print $2 }'`
     echo "PID = $p";
     if [ "$p" != "" ]; then
