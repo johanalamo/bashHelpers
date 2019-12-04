@@ -295,6 +295,48 @@ case $1 in
     fi;
     exit;
 ;;
+"installgradle")
+	version="5.6.3";
+
+	#descargar
+	wget https://services.gradle.org/distributions/gradle-${version}-bin.zip -P /tmp   2>>/tmp/descargagradle.txt 1>>/tmp/descargagradle.txt;
+	if [ "$?" -eq "0" ]; then
+		wr g "gradle descargado con exito";
+	else
+		wr r "ERROR descargando gradle";
+		exit 1;
+	fi;
+	
+	#descomprimir
+	sudo unzip -d /opt/gradle-${version} /tmp/gradle-${version}-bin.zip  2>>/tmp/instalaciongradle.txt 1>>instalaciongradle.txt
+	if [ "$?" -eq "0" ]; then
+		wr g "gradle descomprimido con exito";
+	else
+		wr r "ERROR descomprimiendo gradle";
+		exit 1;
+	fi;
+
+	#setear archivo para la configuracion de variables de entorno
+	echo "export GRADLE_HOME=/opt/gradle-${version}" >>  /tmp/gradle-${version};
+	echo 'export PATH=${GRADLE_HOME}/bin:${PATH}' >>  /tmp/gradle-${version};
+	sudo mv /tmp/gradle-${version} /etc/profile.d/gradle.sh;
+
+	if [ -f /etc/profile.d/gradle.sh ]; then
+		wr g "archivo /etc/profile.d/gradle.sh  creado";
+	else
+		wr r "fallo la creacion del archivo /etc/profile.d/gradle.sh";
+		exit 1;
+	fi;
+	
+	#setear variables de entorno
+	source /etc/profile.d/gradle.sh
+	
+	#colocar el seteo de las variables de entorno en .bashrc
+	
+	echo "source /etc/profile.d/gradle.sh" >> ~/.bashrc; 
+
+	gradle -v;
+;;
 *)
    wr r "unrecognized option: $1";
    exit 1;
