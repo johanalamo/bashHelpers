@@ -337,6 +337,10 @@ case $1 in
 
 	gradle -v;
 ;;
+"installjava")
+  sudo apt install openjdk-8-jdk openjdk-8-jre;
+  sudo apt install openjdk-11-jdk openjdk-11-jre;
+;;
 *)
    wr r "unrecognized option: $1";
    exit 1;
