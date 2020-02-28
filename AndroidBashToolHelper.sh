@@ -259,15 +259,16 @@ case $1 in
    exit;
 ;;
 "run")
+	r=1;
     $gradle assembleDebug &&
     $gradle installDebug &&
     adb shell cmd package uninstall -k "${app}" &&
     #el anterior siempre da $?=0
     adb -d install "`pwd`/app/build/outputs/apk/debug/app-debug.apk" &&
     #anterior manejarla con $? 0->exito   otro-> fall{o
-    adb shell am start -n "${app}/${pkg}.${activity}" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER;
+    adb shell am start -n "${app}/${pkg}.${activity}" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER  && r=0;
     date;
-    exit;
+    exit $r;
 ;;
 "install")
     adb shell cmd package uninstall -k $app
@@ -289,7 +290,10 @@ case $1 in
     p=`adb shell ps -A | grep ${app} | awk '{ print $2 }'`
     echo "PID = $p";
     if [ "$p" != "" ]; then
-      adb shell logcat --pid=$p | cut -c 32-
+#a log | grep -e ".\ PersonListActivity" -e ".\ PersonListRecyclerViewAdapter"    
+#      adb shell logcat --pid=$p ; #| cut -c 32-
+#      adb shell logcat --pid=$p | cut -c 32-
+      adb shell logcat --pid=$p *:V;
     else
       echo "not opened";
     fi;
