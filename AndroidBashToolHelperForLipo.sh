@@ -32,8 +32,155 @@ activity=`cat $conf_file | grep "activity=" | awk -F= '{print $2}'`
 gradle=`cat $conf_file | grep "gradle=" | awk -F= '{print $2}'`
 
 
-
+#adb connect 192.168.0.58;
+passenger_id=$(adb devices -l | grep emulator | grep -oE "transport_id.*$" | awk -F: '{print $2}')
+driver_id=$(adb devices -l | grep SM_ | grep -oE "transport_id.*$" | awk -F: '{print $2}')
+#passenger_id=1
+#driver_id=1
+# adb tcpip 5555
+echo pass $passenger_id;
+echo driv $driver_id;
 case $1 in
+"c")
+	#este debe correrse sin ningun emulador conectado
+	adb connect 192.168.0.58;
+	echo "ll: $?";
+	if [ "$?" == "0" ]; then
+		echo exito
+	else
+		echo fracaso
+	fi
+exit;
+
+	adb tcpip 5555
+	adb devices -l;
+	exit;
+;;
+"logpassenger")
+	adb -t $passenger_id shell logcat --pid=$(adb -t $passenger_id shell ps | grep passenger | awk '{print $2}')
+	exit
+;;
+"logdriver")
+	adb -t $driver_id shell logcat --pid=$(adb -t $driver_id shell ps | grep driver | awk '{print $2}')
+	exit
+;;
+# passenger section
+"cp")
+	wr y "Compiling passenger";
+	./gradlew assemblePassengerDebug # 2>/tmp/comp_error.txt 1>/tmp/comp_success.txt ;
+	r=$?;
+	if [ $r -eq 0 ]; then
+	  wr g "compilacion de Passenger Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  wr r "FALLO LA COMPILACIÓN DE PASSENGER";
+	  echo;
+	  exit 1;
+	fi
+;;
+"up")
+	wr y "UNINSTALLING passenger";
+    adb -t $passenger_id shell cmd package uninstall com.lipo.passenger.debug
+    exit
+;;
+"ip")
+	wr y "Installing passenger";
+    adb -t $passenger_id install "`pwd`/presentation/build/outputs/apk/passenger/debug/presentation-passenger-debug.apk"
+
+	r=$?;
+	if [ $r -eq 0 ]; then
+	  wr g "Instalación de Passenger Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  #cat /tmp/comp_error.txt | grep "e: "; 
+	  wr r "FALLO LA INSTALACIÓN DE PASSENGER";
+	  echo;
+	  exit 1;
+	fi
+    #anterior manejarla con $? 0->exito   otro-> fall{o
+    #adb shell am start -n "com.lipo.passenger.debug/com.lipo.presentation.activities.LauncherActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER;
+    exit;
+;;
+"rp")
+    rtext=$(adb -t $passenger_id shell am start -n "com.lipo.passenger.debug/com.lipo.presentation.activities.LauncherActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER 2>&1 1>&1)
+    wr y "Running Passenger"
+    echo "$rtext"
+	r=$(echo $rtext | grep -i "error" | wc -l)
+	if [ $r -eq 0 ]; then
+	  wr g "Iniciacion de Passenger Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  wr r "FALLO LA Iniciacion DE PASSENGER";
+	  echo;
+	  exit 1;
+	fi
+    
+    exit;
+;;
+"tp")
+	./a.sh cp && ./a.sh up && ./a.sh ip && ./a.sh rp;
+	exit $?
+;;
+# DRIVER section
+"cd")
+	wr y "Compiling driver";
+	./gradlew assembleDriverDebug 
+	r=$?;
+	if [ $r -eq 0 ]; then
+	  wr g "compilacion de DRIVER Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  wr r "FALLO LA COMPILACIÓN DE DRIVER";
+	  echo;
+	  exit 1;
+	fi
+;;
+"ud")
+	wr y "UNINSTALLING driver";
+    adb -t $driver_id shell cmd package uninstall com.lipo.driver.debug
+    exit
+;;
+"id")
+	wr y "Installing driver";
+    adb -t $driver_id install "`pwd`/presentation/build/outputs/apk/driver/debug/presentation-driver-debug.apk"
+
+	r=$?;
+	if [ $r -eq 0 ]; then
+	  wr g "Instalación de Driver Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  wr r "FALLO LA INSTALACIÓN DE Driver";
+	  echo;
+	  exit 1;
+	fi
+    exit;
+;;
+"rd")
+    rtext=$(adb -t $driver_id shell am start -n "com.lipo.driver.debug/com.lipo.presentation.activities.LauncherActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER 2>&1 1>&1)
+    wr y "Running Driver"
+    echo "$rtext"
+	r=$(echo $rtext | grep -i "error" | wc -l)
+	if [ $r -eq 0 ]; then
+	  wr g "Iniciacion de Driver Debug correcta";
+	  echo;
+	  exit 0;
+	else
+	  wr r "FALLO LA Iniciacion DE driver";
+	  echo;
+	  exit 1;
+	fi
+    
+    exit;
+;;
+"td")
+	./a.sh cd && ./a.sh ud && ./a.sh id && ./a.sh rd;
+	exit $?
+;;
 "comkotlin" | "comandroid")
    if [ "$1" = "comkotlin" ]; then
       instruction="compileKotlin";
@@ -261,10 +408,11 @@ case $1 in
 "run")
 	r=1;
     $gradle assembleDebug &&
-    $gradle installDebug &&
+    $gradle installDriverDebug &&
     adb shell cmd package uninstall -k "${app}" &&
     #el anterior siempre da $?=0
-    adb -d install "`pwd`/app/build/outputs/apk/debug/app-debug.apk" &&
+#    adb -d install "`pwd`/app/build/outputs/apk/debug/app-debug.apk" &&
+    adb -d install "`pwd`/presentation/build/outputs/apk/driver/debug/presentation-driver-debug.apk" &&
     #anterior manejarla con $? 0->exito   otro-> fall{o
     adb shell am start -n "${app}/${pkg}.${activity}" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER  && r=0;
     date;

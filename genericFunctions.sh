@@ -7,12 +7,13 @@ function wr {
 
 
   d=$(date);
-  echo -n "$d: ";
+  #echo -n "$d: ";
   case $1 in
     "g")    $green; echo -n $2; $normal;    ;;
     "r")    $red; echo -n $2; $normal;    ;;
     "y")    $yellow; echo -n $2; $normal;    ;;
     "b")    $blink; echo -n $2; $normal;    ;;
+    "n")    $normal; echo -n $2; $normal;    ;;
     *) echo "No color setted for funcion wr: $1"
   esac;
   echo;
